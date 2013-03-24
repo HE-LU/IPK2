@@ -6,7 +6,7 @@
 # promenne prekladu
 
 
-NAME = webclient server
+NAME = client server
 CPP  = g++
 CC   = g++
 SCFLAGS = -g -pedantic -Wall -W -O2 -DINLINE
@@ -29,11 +29,11 @@ all: $(NAME)
 
 ################################################################################
 # linkovani vysledneho souboru
-webclient: main.o parser.o socket.o
-	$(CC) -o $@ main.o parser.o socket.o
+client: client.o socket.o
+	$(CC) -o $@ client.o socket.o
 	
-server: server.o
-	$(CC) -o $@ server.o
+server: server.o socket.o
+	$(CC) -o $@ server.o socket.o -lpthread
 
 ################################################################################
 # kompilace hlavniho souboru
@@ -48,6 +48,9 @@ socket.o: socket.cpp
 	
 server.o: server.cpp
 	$(CC) -c server.cpp -o server.o $(CXXFLAGS)
+	
+client.o: client.cpp
+	$(CC) -c client.cpp -o client.o $(CXXFLAGS)
 
 ################################################################################
 # kompilace modulu
