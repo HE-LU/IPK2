@@ -1,20 +1,4 @@
 #include <iostream>
-#include <unistd.h>
-#include <string>
-#include <cctype>
-#include <sstream>
-#include <cstdlib>
-
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <unistd.h>
-#include <arpa/inet.h>
-
-#include <pthread.h>
-
-#include <cstring>
 
 #include "socket.h"
 
@@ -56,16 +40,16 @@ int main(int argc, char** argv)
   // ------ CREATE SOCKET ------
   class_socket socket;
   
-  cout << "Trying open socket on: " << params.h << " port: " << params.p << endl;
+  //cout << "Trying open socket on: " << params.h << " port: " << params.p << endl;
   int tmp = socket.s_connect(params.h, params.p);
   if ( tmp == 1)
   {
-    fprintf(stderr, "Socket could not be opened\n");
+    cerr << "Socket could not be opened" << endl;
     exit(-1);
   }
   else if ( tmp == 2)
   {
-    fprintf(stderr, "Failed to recover host name\n");
+    cerr << "Failed to recover host name" << endl;
     exit(-1);
   }
   
@@ -100,11 +84,11 @@ int main(int argc, char** argv)
     request.append("0"+params.u);
   
   // ------ Send query to server ------
-  cout << "Sending: " << request << endl;
+  //cout << "Sending: " << request << endl;
   socket.s_write(request);
   
   // ------ Receive response ------
-  cout << "Receiving!" << endl;
+  //cout << "Receiving!" << endl;
   
   string text = socket.s_read();;
   istringstream stream(text);

@@ -1,17 +1,4 @@
 #include <iostream>
-#include <unistd.h>
-#include <string>
-#include <cctype>
-#include <sstream>
-#include <cstdlib>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <pthread.h>
-#include <cstring>
 #include <fstream>
 #include <vector>
 #include <sys/wait.h>
@@ -30,12 +17,19 @@ typedef struct struct_params
 
 struct_params get_params(int, char**);
 
+void child_die(int sig)
+{
+  sig = sig; // get rid of warning!
+  while(waitpid(-1,0,WNOHANG)>0);
+}
+
 // ------------------ MAIN ----------------
 int main(int argc, char** argv)
 {
+  (void) signal(SIGCHLD, child_die);
+  
   struct_params params = get_params(argc, argv);
     
-  
   // ------- Listen on socket -------------
   class_socket socket;
   if(socket.s_listen(params.p) != 0)
@@ -50,25 +44,34 @@ int main(int argc, char** argv)
   {
     pid_t child_pid;
     
-    cout << "Server listening on port: " << htons(params.p) << endl << flush;
-   
+    //cout << "Server listening on port: " << htons(params.p) << endl << flush;
     
     sockaddr_in clientAddr;
     socklen_t sin_size=sizeof(struct sockaddr_in);
     class_socket client_sock;
     client_sock.sock = accept(socket.sock, (struct sockaddr*)&clientAddr, &sin_size);
     
-    cout << "Client connected! ID: " << client_sock.sock << endl << flush;
-    
-    
+    //cout << "Client connected! ID: " << client_sock.sock << endl << flush;
     
     child_pid = fork();
+    for(int z = 0; child_pid < 0 && z < 6; z++)
+    {
+      cerr << "FORK FAILED!" << endl;
+      usleep(10000);
+      child_pid = fork();
+    }
     
+    if (child_pid < 0)
+    {
+      cerr << "OU OU Fork Failed 5 times... exiting!" << endl;
+      exit(-1);
+    }
+      
     if (child_pid == 0) 
     {         
       string received_string = client_sock.s_read();
 
-      cout << "Server received:  " << received_string << endl << flush;
+      //cout << "Server received:  " << received_string << endl << flush;
       
       string response_params; 
       string response;
@@ -79,10 +82,9 @@ int main(int argc, char** argv)
       
       vector<string> find;
       unsigned r_start = 0;
-      unsigned r_end = data.size();
       unsigned cmp = -1;
       
-      cout << "START: " << r_start << " END: " << r_end << endl << flush;
+      //cout << "START: " << r_start << " END: " << r_end << endl << flush;
       
       data.append(" ");
       while(r_start != cmp)
@@ -93,17 +95,18 @@ int main(int argc, char** argv)
         else
           break;
         r_start = r_mezera+1;
-      }
+      }   
                
       ifstream file;
       file.open("/etc/passwd");
       if(!file.good())
       {
+        cerr << "/etc/passwd does not exist... what?" << endl;
         return 1; // exit if file not found
       }    
       
       // Loop for all logins or uids
-      for(int y=0;y<find.size();y++)
+      for(unsigned int y=0;y<find.size();y++)
       {
         file.clear();
         file.seekg (0, file.beg);
@@ -147,7 +150,8 @@ int main(int argc, char** argv)
           
           if(parse)
           {
-            cout << "Parse: " << radek << endl << flush;
+            //cout << "Parse: " << radek << endl << flush;
+            
             // login_name:passwd:UID:GID:user_name:directory:shell
             //     L             U   G    N         H      S    
             //     1              2  3     4         5      6
@@ -195,7 +199,7 @@ int main(int argc, char** argv)
               response.append(parsed.at(num));
                 if(((i+1) < 6) && response_params.at(i+1) != '0')
                 {
-                  cout << " Next is: \"" << response_params.at(i+1) << "\" Appending space!" << endl;
+                  //cout << " Next is: \"" << response_params.at(i+1) << "\" Appending space!" << endl;
                   response.append(" ");
                 }  
             }
@@ -203,23 +207,18 @@ int main(int argc, char** argv)
           }        
         }
         if(!parsed)
+        {
           if(uid == "0")
             response.append("::ERROR:: UID unknown:"+find.at(y)+"\n");
           else
             response.append("::ERROR:: Login unknown:"+find.at(y)+"\n");
+        }
       }
       
       client_sock.s_write(response);
       client_sock.s_write("::END::");
       
       client_sock.s_disconnect();
-    }
-    else /* parent process */
-    {
-      pid_t p;
-      int status;
-
-      p = wait(&status);
     }
   }
   

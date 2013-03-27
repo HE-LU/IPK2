@@ -33,7 +33,7 @@ client: client.o socket.o
 	$(CC) -o $@ client.o socket.o
 	
 server: server.o socket.o
-	$(CC) -o $@ server.o socket.o -lpthread
+	$(CC) -o $@ server.o socket.o
 
 ################################################################################
 # kompilace hlavniho souboru
