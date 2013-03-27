@@ -20,6 +20,8 @@
 
 using namespace std;
 
+// -----------------------------------------
+// ------------------ STRUCT ----------------
 typedef struct params
 {
   string h;
@@ -34,23 +36,24 @@ typedef struct params
   int S;
   int counter;
 } struct_params;
+// ------------------ STRUCT ----------------
+// -----------------------------------------
 
 struct_params get_params(int, char**);
 
+// -----------------------------------------
+// ------------------- MAIN -----------------
+// -----------------------------------------
 int main(int argc, char** argv)
 {
-  cout << endl << endl;
-  
   struct_params params = get_params(argc, argv);
+    
+  if(params.counter == 0)
+  {
+    exit(0);
+  }
   
-  cout << params.u << params.l << endl;
-  cout << params.L << endl;
-  cout << params.U << endl;
-  cout << params.G << endl;
-  cout << params.N << endl;
-  cout << params.H << endl;
-  cout << params.S << endl;
-  
+  // ------ CREATE SOCKET ------
   class_socket socket;
   
   cout << "Trying open socket on: " << params.h << " port: " << params.p << endl;
@@ -66,8 +69,8 @@ int main(int argc, char** argv)
     exit(-1);
   }
   
-  
-  
+
+  // ------ Prepare request query ------
   string request;
   
   for(int i=1;i<8;i++)
@@ -96,19 +99,38 @@ int main(int argc, char** argv)
   else
     request.append("0"+params.u);
   
-  
+  // ------ Send query to server ------
   cout << "Sending: " << request << endl;
   socket.s_write(request);
   
+  // ------ Receive response ------
   cout << "Receiving!" << endl;
-  string text = socket.s_read();
   
-  cout << text << endl;
+  string text = socket.s_read();;
+  istringstream stream(text);
+  string radek;
   
+  while(getline(stream,radek))
+  {
+    if(!radek.compare("::END::"))
+      break;
+    if(!radek.compare(0,9,"::ERROR::"))
+      cerr << radek.substr(10,radek.size()-10) << endl;
+    else
+      cout << radek << endl;
+  }
+
+  // ------ clean and exit ------
   socket.s_disconnect();
   return 0;
 }
+// -----------------------------------------
+// ------------------- MAIN -----------------
+// -----------------------------------------
 
+// -----------------------------------------
+// ---------------- GET_PARAMS ----------------
+// -----------------------------------------
 struct_params get_params(int argc, char** argv)
 {
   struct_params par;
@@ -249,4 +271,6 @@ struct_params get_params(int argc, char** argv)
   
   return par;
 }
-
+// -----------------------------------------
+// ---------------- GET_PARAMS ----------------
+// -----------------------------------------

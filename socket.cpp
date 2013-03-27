@@ -31,6 +31,7 @@ int class_socket::s_connect(string host, string port)
 	freeaddrinfo(res); 
 	return 0;
       }
+      break;
     } 
     freeaddrinfo(res);
     return 1;
@@ -46,6 +47,7 @@ int class_socket::s_write(string query)
 {
   unsigned int sent = 0;
   int tmp = 0;
+
   while(sent < query.size())
   {
     tmp = send(sock, query.c_str()+sent, query.size()-sent, 0);
@@ -62,15 +64,22 @@ string class_socket::s_read()
   int tmpres = 0;
   string text;
     
-  while((tmpres = recv(sock, buf, BUFF_SIZE, 0)) > 0)
-  {
-    for (int i=0;i<tmpres;i++)
+//   while((tmpres = recv(sock, buf, BUFF_SIZE, 0)) > 0)
+//   {
+//     cout << "Looping" << endl;
+//     for (int i=0;i<tmpres;i++)
+//     {
+//       text.push_back(buf[i]);
+//     }
+//     memset(buf, 0, sizeof(buf));
+//   }
+  
+  tmpres = recv(sock, buf, BUFF_SIZE, 0);
+  for (int i=0;i<tmpres;i++)
     {
       text.push_back(buf[i]);
     }
-    memset(buf, 0, sizeof(buf));
-  }
-  
+    
   return text;
 }
 
